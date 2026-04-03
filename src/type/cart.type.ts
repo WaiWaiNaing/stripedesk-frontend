@@ -33,10 +33,19 @@ export interface CartAddItemRequest {
   quantity?: number | null;
 }
 
+/** Mirrors OpenAPI `CartLineQuantityRequest` */
+export interface CartLineQuantityRequest {
+  quantity: number;
+}
+
 export interface CheckoutSessionRequest {
   product_id?: number;
   cart_id?: number | null;
   quantity?: number | null;
+}
+
+export interface CheckoutInvoiceRequest {
+  cart_id: number;
 }
 
 export interface CheckoutSessionData {
@@ -49,4 +58,10 @@ export interface CheckoutSessionData {
 export interface CheckoutSessionResponse {
   success: boolean;
   data: CheckoutSessionData;
+}
+
+/** API shape for /checkout/invoice and /invoices/{id}/pay can vary with additional properties. */
+export interface InvoiceApiResponse {
+  success: boolean;
+  data: Record<string, unknown>;
 }

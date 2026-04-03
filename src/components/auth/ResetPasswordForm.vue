@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 import { useRouter } from "vue-router";
 import FormTextInput from "@/components/common/form-input/FormTextInput.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import { toast } from "@/lib/toast";
 import { useResetPasswordMutation } from "@/query/auth.query";
 import { getApiErrorMessage } from "@/services/auth.service";
 
@@ -21,16 +22,14 @@ const resetPasswordMutation = useResetPasswordMutation();
 
 const form = reactive({ password: "", confirmPassword: "" });
 const errors = reactive({ password: "", confirmPassword: "" });
-const submitError = ref("");
 
 function validate() {
-  submitError.value = "";
   errors.password = form.password.length >= 8 ? "" : "Password must be at least 8 characters";
   errors.confirmPassword =
     form.confirmPassword === form.password ? "" : "Passwords do not match";
 
   if (!props.email || !props.token) {
-    submitError.value = "Reset link is incomplete. Please restart the recovery flow.";
+    toast.error("Reset link is incomplete. Please restart the recovery flow.");
     return false;
   }
 
@@ -47,41 +46,19 @@ async function handleSubmit() {
       new_password: form.password,
     });
 
+    toast.success("Password updated. You can sign in again.");
     await router.push({
       path: "/login",
       query: { reset: "1" },
     });
   } catch (error) {
-    submitError.value = getApiErrorMessage(error, "Failed to reset password. Please try again.");
+    toast.error(getApiErrorMessage(error, "Failed to reset password. Please try again."));
   }
 }
 </script>
 
 <template>
   <form class="space-y-6" @submit.prevent="handleSubmit">
-    <div
-      v-if="submitError"
-      class="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="mt-0.5 shrink-0"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
-      <span class="flex-1">{{ submitError }}</span>
-    </div>
-
     <FormTextInput
       v-model="form.password"
       type="password"

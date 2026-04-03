@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { Loader2, Package, Pencil, Plus } from "@lucide/vue";
+import { toast } from "@/lib/toast";
 import { adminService } from "@/services/admin.service";
 import { getApiErrorMessage } from "@/services/auth.service";
 import type { AdminCurrency, AdminProduct } from "@/type/admin.type";
@@ -12,8 +13,6 @@ const items = ref<AdminProduct[]>([]);
 const currencies = ref<AdminCurrency[]>([]);
 const loading = ref(true);
 const saving = ref(false);
-const error = ref("");
-const notice = ref("");
 const includeDeleted = ref(false);
 const { source: search, debounced: searchDebounced } = useDebouncedRef("", 300);
 
@@ -64,11 +63,10 @@ async function loadCurrencies() {
 
 async function load() {
   loading.value = true;
-  error.value = "";
   try {
     items.value = await adminService.listProducts(includeDeleted.value);
   } catch (e) {
-    error.value = getApiErrorMessage(e, "Failed to load products.");
+    toast.error(getApiErrorMessage(e, "Failed to load products."));
   } finally {
     loading.value = false;
   }
@@ -79,13 +77,11 @@ function onToggleDeleted() {
 }
 
 async function submitCreate() {
-  notice.value = "";
   if (!form.name.trim() || !form.currency_code) {
-    error.value = "Name and currency are required.";
+    toast.error("Name and currency are required.");
     return;
   }
   saving.value = true;
-  error.value = "";
   const desc = form.description.trim();
   try {
     await adminService.createProduct({
@@ -94,13 +90,13 @@ async function submitCreate() {
       price: form.price,
       currency_code: form.currency_code,
     });
-    notice.value = "Product created.";
+    toast.success("Product created.");
     form.name = "";
     form.description = "";
     form.price = 9.99;
     await load();
   } catch (e) {
-    error.value = getApiErrorMessage(e, "Create failed.");
+    toast.error(getApiErrorMessage(e, "Create failed."));
   } finally {
     saving.value = false;
   }
@@ -114,7 +110,6 @@ function openEdit(row: AdminProduct) {
   editForm.price = Number(row.price) || 0;
   editForm.currency_code = row.currency_code ?? "";
   editOpen.value = true;
-  error.value = "";
 }
 
 function closeEdit() {
@@ -125,7 +120,6 @@ function closeEdit() {
 async function saveEdit() {
   if (editId.value == null) return;
   saving.value = true;
-  error.value = "";
   const d = editForm.description.trim();
   try {
     await adminService.updateProduct(editId.value, {
@@ -134,11 +128,11 @@ async function saveEdit() {
       price: editForm.price,
       currency_code: editForm.currency_code,
     });
-    notice.value = "Product updated.";
+    toast.success("Product updated.");
     closeEdit();
     await load();
   } catch (e) {
-    error.value = getApiErrorMessage(e, "Update failed.");
+    toast.error(getApiErrorMessage(e, "Update failed."));
   } finally {
     saving.value = false;
   }
@@ -174,19 +168,6 @@ onMounted(async () => {
           class="w-48 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400/50 focus:outline-none"
         />
       </div>
-    </div>
-
-    <div
-      v-if="error && !editOpen"
-      class="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-    >
-      {{ error }}
-    </div>
-    <div
-      v-if="notice"
-      class="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
-    >
-      {{ notice }}
     </div>
 
     <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -333,7 +314,6 @@ onMounted(async () => {
               </option>
             </select>
           </div>
-          <p v-if="error && editOpen" class="mt-3 text-sm text-red-300">{{ error }}</p>
           <div class="mt-6 flex justify-end gap-2">
             <button
               type="button"

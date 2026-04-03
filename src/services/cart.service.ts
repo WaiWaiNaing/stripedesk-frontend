@@ -3,6 +3,9 @@ import { api } from "@/app/api/api";
 import type {
   CartAddItemRequest,
   CartDetailResponse,
+  CartLineQuantityRequest,
+  CheckoutInvoiceRequest,
+  InvoiceApiResponse,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
 } from "@/type/cart.type";
@@ -26,8 +29,31 @@ export const cartService = {
     return data;
   },
 
+  async updateCartLineQuantity(cartId: number, productId: number, body: CartLineQuantityRequest) {
+    const { data } = await api.patch<CartDetailResponse>(
+      `/carts/${cartId}/items/${productId}`,
+      body,
+    );
+    return data;
+  },
+
+  async removeCartLine(cartId: number, productId: number) {
+    const { data } = await api.delete<CartDetailResponse>(`/carts/${cartId}/items/${productId}`);
+    return data;
+  },
+
   async createCheckoutSession(body: CheckoutSessionRequest) {
     const { data } = await api.post<CheckoutSessionResponse>("/checkout/session", body);
+    return data;
+  },
+
+  async createInvoiceFromCart(body: CheckoutInvoiceRequest) {
+    const { data } = await api.post<InvoiceApiResponse>("/checkout/invoice", body);
+    return data;
+  },
+
+  async payInvoice(invoiceId: number) {
+    const { data } = await api.post<InvoiceApiResponse>(`/invoices/${invoiceId}/pay`);
     return data;
   },
 };

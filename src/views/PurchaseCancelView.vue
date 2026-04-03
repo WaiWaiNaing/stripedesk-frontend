@@ -20,10 +20,10 @@
           Return to shop
         </router-link>
         <router-link
-          to="/dashboard"
+          to="/shop"
           class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-white"
         >
-          Back to dashboard
+          Back to shop
         </router-link>
       </div>
     </div>

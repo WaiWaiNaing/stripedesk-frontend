@@ -4,6 +4,9 @@ import { cartService } from "@/services/cart.service";
 import type {
   CartAddItemRequest,
   CartDetailResponse,
+  CartLineQuantityRequest,
+  CheckoutInvoiceRequest,
+  InvoiceApiResponse,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
 } from "@/type/cart.type";
@@ -50,5 +53,61 @@ export function useAddCartItemMutation() {
 export function useCheckoutSessionMutation() {
   return useMutation<CheckoutSessionResponse, unknown, CheckoutSessionRequest>({
     mutationFn: (body) => cartService.createCheckoutSession(body),
+  });
+}
+
+export function useCheckoutInvoiceMutation() {
+  return useMutation<InvoiceApiResponse, unknown, CheckoutInvoiceRequest>({
+    mutationFn: (body) => cartService.createInvoiceFromCart(body),
+  });
+}
+
+export function usePayInvoiceMutation() {
+  return useMutation<InvoiceApiResponse, unknown, { invoiceId: number }>({
+    mutationFn: ({ invoiceId }) => cartService.payInvoice(invoiceId),
+  });
+}
+
+export function useUpdateCartLineMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      cartId,
+      productId,
+      body,
+      userId,
+    }: {
+      cartId: number;
+      productId: number;
+      body: CartLineQuantityRequest;
+      userId: number;
+    }) => {
+      return cartService.updateCartLineQuantity(cartId, productId, body);
+    },
+    onSuccess: (_data, { userId }) => {
+      void queryClient.invalidateQueries({ queryKey: cartQueryKeys.user(userId) });
+    },
+  });
+}
+
+export function useRemoveCartLineMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      cartId,
+      productId,
+      userId,
+    }: {
+      cartId: number;
+      productId: number;
+      userId: number;
+    }) => {
+      return cartService.removeCartLine(cartId, productId);
+    },
+    onSuccess: (_data, { userId }) => {
+      void queryClient.invalidateQueries({ queryKey: cartQueryKeys.user(userId) });
+    },
   });
 }

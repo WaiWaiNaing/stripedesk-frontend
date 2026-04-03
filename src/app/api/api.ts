@@ -23,6 +23,11 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Let callers handle 401 without refresh (e.g. public landing product preview).
+    if ((originalConfig as { __allowAnonymous401?: boolean }).__allowAnonymous401) {
+      return Promise.reject(error);
+    }
+
     if (originalConfig.__skip401Retry) {
       const auth = useAuthStore();
       auth.logout();

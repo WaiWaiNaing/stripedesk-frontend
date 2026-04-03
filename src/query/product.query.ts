@@ -8,3 +8,23 @@ export const useProductQuery = () => {
     queryFn: () => productService.listProducts(),
   });
 };
+
+/** For public routes: anonymous 401 returns error without global auth redirect. */
+export const usePublicProductPreviewQuery = () => {
+  return useQuery({
+    queryKey: ["products", "public-preview"],
+    queryFn: async (): Promise<ProductListResponse> =>
+      productService.listProductsAllowAnonymous(),
+    retry: false,
+  });
+};
+
+/** Shop catalog for guests and signed-in users (avoids global 401 handling for anonymous visitors). */
+export const useShopProductQuery = () => {
+  return useQuery({
+    queryKey: ["products", "shop"],
+    queryFn: async (): Promise<ProductListResponse> =>
+      productService.listProductsAllowAnonymous(),
+    retry: false,
+  });
+};

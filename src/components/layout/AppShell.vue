@@ -21,7 +21,9 @@ async function handleLogout() {
 </script>
 
 <template>
-  <MainLayout v-if="auth.role !== 'admin'">
+  <router-view v-if="route.name === 'landing'" />
+
+  <MainLayout v-else-if="auth.role !== 'admin'">
     <router-view />
   </MainLayout>
 
@@ -33,7 +35,7 @@ async function handleLogout() {
         class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"
       >
         <div class="flex items-center justify-between gap-4">
-          <router-link to="/dashboard" class="flex items-center gap-3">
+          <router-link to="/" class="flex items-center gap-3">
             <div
               class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-sm font-semibold text-white"
             >

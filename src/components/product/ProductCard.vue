@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Product } from "@/type/product.type";
+import { ref } from "vue";
+import AlertModalBox from "@/components/common/AlertModalBox.vue";
 import AppButton from "../ui/AppButton.vue";
 
 type Variant = "transparent" | "solid";
@@ -7,10 +9,13 @@ type Variant = "transparent" | "solid";
 interface Props {
   product: Product;
   variant?: Variant;
+  /** True when this product is already present in user's active cart. */
+  inCart?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   variant: "solid",
+  inCart: false,
 });
 
 const emit = defineEmits<{
@@ -27,7 +32,13 @@ function handleAddToCart() {
   emit("add-to-cart", props.product);
 }
 
-function handleBuyNow() {
+const buyNowOpen = ref(false);
+
+function openBuyNowConfirm() {
+  buyNowOpen.value = true;
+}
+
+function confirmBuyNow() {
   emit("buy-now", props.product);
 }
 </script>
@@ -58,16 +69,33 @@ function handleBuyNow() {
       {{ product.description ?? "No description provided." }}
     </p>
 
-    <div class="mt-6 grid gap-2 sm:grid-cols-2">
+    <div class="mt-6 grid gap-2" :class="props.inCart ? 'sm:grid-cols-1' : 'sm:grid-cols-2'">
       <button
         type="button"
-        class="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:border-white/20 hover:bg-white/10"
+        :disabled="props.inCart"
+        :class="
+          props.inCart
+            ? 'cursor-not-allowed opacity-60 hover:border-white/10 hover:bg-white/5'
+            : 'hover:border-white/20 hover:bg-white/10'
+        "
+        class="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-100 transition disabled:cursor-not-allowed disabled:opacity-60"
         @click="handleAddToCart"
       >
-        Add to cart
+        {{ props.inCart ? "This item is already in your cart" : "Add to cart" }}
       </button>
 
-      <AppButton class="w-full text-sm" @click="handleBuyNow"> Buy now </AppButton>
+      <AppButton v-if="!props.inCart" class="w-full text-sm" @click="openBuyNowConfirm">
+        Buy now
+      </AppButton>
     </div>
+
+    <AlertModalBox
+      v-model="buyNowOpen"
+      title="Confirm purchase"
+      :description="`Buy ${product.name} for ${formatPrice()}? You will be taken to your cart to complete checkout.`"
+      confirm-text="Continue"
+      cancel-text="Not now"
+      @confirm="confirmBuyNow"
+    />
   </article>
 </template>

@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import FormPinInput from "@/components/common/form-input/FormPinInput.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import { toast } from "@/lib/toast";
 import { useResendOtpMutation, useVerifyOtpMutation } from "@/query/auth.query";
 import { getApiErrorMessage } from "@/services/auth.service";
 import type { AuthIntent, VerifyOtpResponse } from "@/type/auth.type";
@@ -22,8 +23,6 @@ const verifyOtpMutation = useVerifyOtpMutation();
 const resendOtpMutation = useResendOtpMutation();
 const form = reactive({ code: "" });
 const fieldError = ref("");
-const submitError = ref("");
-const resendMessage = ref("");
 const resendCooldown = ref(0);
 let resendTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -68,8 +67,6 @@ function isResetResponse(
 
 async function handleSubmit() {
   fieldError.value = "";
-  submitError.value = "";
-  resendMessage.value = "";
 
   if (!form.code || form.code.length !== 6) {
     fieldError.value = "Enter the 6-digit verification code.";
@@ -77,7 +74,7 @@ async function handleSubmit() {
   }
 
   if (!props.email) {
-    submitError.value = "Missing email for OTP verification.";
+    toast.error("Missing email for OTP verification.");
     return;
   }
 
@@ -104,16 +101,13 @@ async function handleSubmit() {
       query: { verified: "1" },
     });
   } catch (error) {
-    submitError.value = getApiErrorMessage(error, "OTP verification failed. Please try again.");
+    toast.error(getApiErrorMessage(error, "OTP verification failed. Please try again."));
   }
 }
 
 async function handleResendOtp() {
-  submitError.value = "";
-  resendMessage.value = "";
-
   if (!props.email) {
-    submitError.value = "Missing email for OTP resend.";
+    toast.error("Missing email for OTP resend.");
     return;
   }
 
@@ -125,10 +119,10 @@ async function handleResendOtp() {
 
     form.code = "";
     fieldError.value = "";
-    resendMessage.value = "A new OTP has been sent to your email.";
+    toast.success("A new code has been sent to your email.");
     startResendTimer();
   } catch (error) {
-    submitError.value = getApiErrorMessage(error, "Failed to resend OTP. Please try again.");
+    toast.error(getApiErrorMessage(error, "Failed to resend OTP. Please try again."));
   }
 }
 
@@ -139,29 +133,6 @@ onBeforeUnmount(() => {
 
 <template>
   <form class="space-y-6" @submit.prevent="handleSubmit">
-    <div
-      v-if="submitError"
-      class="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="mt-0.5 shrink-0"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
-      <span class="flex-1">{{ submitError }}</span>
-    </div>
-
     <FormPinInput v-model="form.code" label="Verification code" :error="fieldError" />
 
     <p v-if="props.email" class="text-center text-sm text-slate-400">
@@ -189,9 +160,5 @@ onBeforeUnmount(() => {
             : "Resend OTP"
       }}
     </button>
-  </p>
-
-  <p v-if="resendMessage" class="mt-3 text-center text-sm text-emerald-400">
-    {{ resendMessage }}
   </p>
 </template>

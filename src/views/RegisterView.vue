@@ -54,7 +54,7 @@ import AuthSwitchLink from "@/components/ui/AuthSwitchLink.vue";
           >
             3
           </div>
-          <span class="text-[13px] text-white/45">Manage everything from your dashboard</span>
+          <span class="text-[13px] text-white/45">Shop, pay, and track orders in one place</span>
         </div>
       </div>
     </template>

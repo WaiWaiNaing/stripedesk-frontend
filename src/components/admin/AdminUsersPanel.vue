@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { Loader2, Plus, Trash2, Users } from "@lucide/vue";
+import { toast } from "@/lib/toast";
 import { adminService } from "@/services/admin.service";
 import { getApiErrorMessage } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
@@ -13,8 +14,6 @@ const auth = useAuthStore();
 const items = ref<AdminUser[]>([]);
 const loading = ref(true);
 const saving = ref(false);
-const error = ref("");
-const notice = ref("");
 const limit = ref(200);
 const { source: search, debounced: searchDebounced } = useDebouncedRef("", 300);
 
@@ -33,37 +32,34 @@ const filtered = computed(() => {
 
 async function load() {
   loading.value = true;
-  error.value = "";
   try {
     items.value = await adminService.listUsers(limit.value);
   } catch (e) {
-    error.value = getApiErrorMessage(e, "Failed to load users.");
+    toast.error(getApiErrorMessage(e, "Failed to load users."));
   } finally {
     loading.value = false;
   }
 }
 
 async function submitCreate() {
-  notice.value = "";
   if (!form.name.trim() || !form.email.trim() || !form.password) {
-    error.value = "Name, email, and password are required.";
+    toast.error("Name, email, and password are required.");
     return;
   }
   saving.value = true;
-  error.value = "";
   try {
     await adminService.createAdminUser({
       name: form.name.trim(),
       email: form.email.trim(),
       password: form.password,
     });
-    notice.value = "Admin created. They must verify OTP (intent: account_activation).";
+    toast.success("Admin created. They must verify OTP (intent: account_activation).");
     form.name = "";
     form.email = "";
     form.password = "";
     await load();
   } catch (e) {
-    error.value = getApiErrorMessage(e, "Create failed.");
+    toast.error(getApiErrorMessage(e, "Create failed."));
   } finally {
     saving.value = false;
   }
@@ -73,12 +69,12 @@ function confirmDelete(row: AdminUser) {
   if (row.id === auth.user?.id) return;
   if (!confirm(`Soft-delete ${row.email}? They will not be able to sign in.`)) return;
   void (async () => {
-    error.value = "";
     try {
       await adminService.deleteUser(row.id);
+      toast.success("User removed.");
       await load();
     } catch (e) {
-      error.value = getApiErrorMessage(e, "Delete failed.");
+      toast.error(getApiErrorMessage(e, "Delete failed."));
     }
   })();
 }
@@ -111,19 +107,6 @@ onMounted(load);
           class="w-48 rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400/50 focus:outline-none"
         />
       </div>
-    </div>
-
-    <div
-      v-if="error"
-      class="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-    >
-      {{ error }}
-    </div>
-    <div
-      v-if="notice"
-      class="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
-    >
-      {{ notice }}
     </div>
 
     <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">

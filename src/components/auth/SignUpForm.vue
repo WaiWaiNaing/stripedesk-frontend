@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 import { useRouter } from "vue-router";
 import FormTextInput from "@/components/common/form-input/FormTextInput.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import { toast } from "@/lib/toast";
 import { useRegisterMutation } from "@/query/auth.query";
 import { getApiErrorMessage } from "@/services/auth.service";
-import { Info, Lock, MailIcon, User2 } from "@lucide/vue";
+import { Lock, MailIcon, User2 } from "@lucide/vue";
 
 const router = useRouter();
 const registerMutation = useRegisterMutation();
 
 const form = reactive({ name: "", email: "", password: "", confirmPassword: "" });
 const errors = reactive({ name: "", email: "", password: "", confirmPassword: "" });
-const submitError = ref("");
 
 function validate() {
-  submitError.value = "";
   errors.name = form.name.trim() ? "" : "Full name is required";
   errors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) ? "" : "Enter a valid email";
   errors.password = form.password.length >= 8 ? "" : "Password must be at least 8 characters";
@@ -42,21 +41,13 @@ async function handleRegister() {
       },
     });
   } catch (error) {
-    submitError.value = getApiErrorMessage(error, "Registration failed. Please try again.");
+    toast.error(getApiErrorMessage(error, "Registration failed. Please try again."));
   }
 }
 </script>
 
 <template>
   <form @submit.prevent="handleRegister" novalidate>
-    <div
-      v-if="submitError"
-      class="flex items-center gap-3 mb-5 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-400"
-    >
-      <Info class="w-4 h-4" />
-      <span class="flex-1">{{ submitError }}</span>
-    </div>
-
     <div class="mb-5">
       <FormTextInput
         v-model="form.name"

@@ -21,7 +21,7 @@ import AuthSwitchLink from "@/components/ui/AuthSwitchLink.vue";
         </span>
       </h2>
       <p class="text-base text-white/60 leading-relaxed mb-9">
-        Manage products, subscriptions, and invoices<br />in one elegant dashboard.
+        Manage products, subscriptions, and invoices<br />in one streamlined workspace.
       </p>
 
       <div class="flex flex-wrap justify-center gap-2.5">

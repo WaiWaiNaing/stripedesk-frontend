@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Lock, MailIcon, Info } from "@lucide/vue";
+import { Lock, MailIcon } from "@lucide/vue";
 import FormTextInput from "@/components/common/form-input/FormTextInput.vue";
 import AppButton from "@/components/ui/AppButton.vue";
+import { toast } from "@/lib/toast";
 import { useLoginMutation, useResendOtpMutation } from "@/query/auth.query";
 import { authService, getApiErrorMessage } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
@@ -15,18 +16,16 @@ const loginMutation = useLoginMutation();
 const resendOtpMutation = useResendOtpMutation();
 const form = reactive({ email: "", password: "" });
 const errors = reactive({ email: "", password: "" });
-const submitError = ref("");
 
 const destination = computed(() =>
   typeof route.query.redirect === "string"
     ? route.query.redirect
     : auth.role === "admin"
       ? "/admin"
-      : "/dashboard",
+      : "/shop",
 );
 
 function validate() {
-  submitError.value = "";
   errors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) ? "" : "Enter a valid email";
   errors.password = form.password ? "" : "Password is required";
   return !errors.email && !errors.password;
@@ -65,27 +64,19 @@ async function handleSubmit() {
         role: profileResponse.data.role,
       });
     } catch {
-      submitError.value = "Logged in, but failed to load your profile.";
+      toast.error("Logged in, but failed to load your profile.");
       return;
     }
 
     await router.push(destination.value);
   } catch (error) {
-    submitError.value = getApiErrorMessage(error, "Login failed. Please try again.");
+    toast.error(getApiErrorMessage(error, "Login failed. Please try again."));
   }
 }
 </script>
 
 <template>
   <form novalidate @submit.prevent="handleSubmit">
-    <div
-      v-if="submitError"
-      class="mb-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-    >
-      <Info class="h-4 w-4 shrink-0" />
-      <span class="flex-1">{{ submitError }}</span>
-    </div>
-
     <div class="mb-5">
       <FormTextInput
         v-model="form.email"

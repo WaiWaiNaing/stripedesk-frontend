@@ -15,10 +15,10 @@
 
       <div class="mt-8 flex flex-wrap justify-center gap-3">
         <router-link
-          to="/dashboard"
+          to="/shop"
           class="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-slate-950"
         >
-          Go to dashboard
+          Continue shopping
         </router-link>
         <router-link
           to="/invoices"
