@@ -21,6 +21,18 @@ const router = createRouter({
           meta: { public: true },
         },
         {
+          path: "shop/success",
+          name: "shop-checkout-success",
+          component: () => import("@/views/ShopCheckoutSuccessView.vue"),
+          meta: { public: true },
+        },
+        {
+          path: "shop/pending",
+          name: "shop-checkout-pending",
+          component: () => import("@/views/ShopCheckoutPendingView.vue"),
+          meta: { public: true },
+        },
+        {
           path: "cart",
           name: "cart",
           component: () => import("@/views/CartView.vue"),
@@ -116,9 +128,10 @@ const router = createRouter({
     },
     {
       path: "/purchase/success",
-      name: "purchase-success",
-      component: () => import("@/views/PurchaseSuccessView.vue"),
-      meta: { public: true },
+      redirect: (to) => ({
+        path: "/shop/success",
+        query: to.query,
+      }),
     },
     {
       path: "/purchase/cancel",
@@ -165,12 +178,8 @@ router.beforeEach((to) => {
     return { name: "shop" };
   }
 
-  if (
-    auth.role === "admin" &&
-    !to.path.startsWith("/admin") &&
-    to.path !== "/purchase/success" &&
-    to.path !== "/purchase/cancel"
-  ) {
+  const userCheckoutPaths = /^\/(purchase\/(success|cancel)|shop\/(success|pending))$/;
+  if (auth.role === "admin" && !to.path.startsWith("/admin") && !userCheckoutPaths.test(to.path)) {
     return { name: "admin-dashboard" };
   }
 
