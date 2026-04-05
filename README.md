@@ -1,48 +1,56 @@
-# frontend
+# StripeDesk FrontEnd
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + Vite + TypeScript SPA for the StripeDesk API: shop checkout, admin products, invoices, receipts (list + PDF download), and JWT + OTP auth with httpOnly cookies.
 
-## Recommended IDE Setup
+## Live deployment
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+| Environment | URL |
+|-------------|-----|
+| **Production SPA** | [https://stripedesk.duolinkmm.com/](https://stripedesk.duolinkmm.com/) |
+| **API + Swagger** | [https://api-stripedesk.duolinkmm.com/docs/#/](https://api-stripedesk.duolinkmm.com/docs/#/) |
 
-## Recommended Browser Setup
+Point the SPA at the API by setting `VITE_API_BASE_URL` to the API’s **versioned REST base** (including `/api/v1`), e.g. `https://api-stripedesk.duolinkmm.com/api/v1`. The backend must allow the SPA origin in `CORS_ALLOW_ORIGIN` and use cookie settings compatible with cross-site auth (`SameSite=None`, `Secure` in production).
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## Checkout & fulfillment (what the UI does)
 
-## Type Support for `.vue` Imports in TS
+After Stripe Checkout redirects back, the success view calls **`POST /checkout/reconcile`** with `session_id` so orders are fulfilled even when the **webhook is slower than the browser**. If the session is not yet complete, the app shows a **pending** state instead of a false success. Together with the API’s idempotent fulfillment and server-side cron reconciliation, this avoids duplicate invoices/receipts and recovers from short outages. See the backend `README.md` section **Payment fulfillment resilience** for the full layer table.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## OTP in API responses (staging / no SMTP)
 
-## Customize configuration
+Some hosts (e.g. DigitalOcean without a transactional email provider) block or restrict outbound SMTP. For those environments the API can enable `OTP_DEV_RETURN_CODE=true` so OTP codes appear **in JSON responses** for registration/password-reset flows—**only for non-production testing**. Plan to switch to a real mail provider and disable that flag in production. Details: backend `README.md` → **OTP verification & SMTP (production note)**.
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## Requirements
 
-## Project Setup
+- Node 18+ (recommended)
+- Yarn (Berry / modern Yarn as in this repo’s lockfile)
 
-```sh
-yarn
+## Environment
+
+Create `.env` in the project root (Vite reads `VITE_*` at build time):
+
+```env
+VITE_API_BASE_URL=http://localhost:8081/api/v1
 ```
 
-### Compile and Hot-Reload for Development
+For production builds, set this to your deployed API base URL.
+
+## Scripts
 
 ```sh
-yarn dev
+yarn              # install
+yarn dev          # dev server (default Vite port)
+yarn build        # production build
+yarn type-check   # vue-tsc
+yarn lint         # ESLint
 ```
 
-### Type-Check, Compile and Minify for Production
+## Stack
 
-```sh
-yarn build
-```
+- Vue 3, Vue Router, Pinia  
+- TanStack Query (Vue)  
+- Ant Design Vue  
+- TypeScript, Vite  
 
-### Lint with [ESLint](https://eslint.org/)
+## Related repository
 
-```sh
-yarn lint
-```
+Backend (CodeIgniter 3, Stripe webhooks, receipts PDF, cron reconcile): use the **StripeDesk** API repo and its `README.md` for Docker, `.env`, Ngrok webhooks (`/api/v1/stripe/webhook`), and operations.
