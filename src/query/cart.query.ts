@@ -95,16 +95,8 @@ export function useRemoveCartLineMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      cartId,
-      productId,
-      userId,
-    }: {
-      cartId: number;
-      productId: number;
-      userId: number;
-    }) => {
-      return cartService.removeCartLine(cartId, productId);
+    mutationFn: async ({ productId, userId }: { productId: number; userId: number }) => {
+      return cartService.removeCartLine(userId, productId);
     },
     onSuccess: (_data, { userId }) => {
       void queryClient.invalidateQueries({ queryKey: cartQueryKeys.user(userId) });

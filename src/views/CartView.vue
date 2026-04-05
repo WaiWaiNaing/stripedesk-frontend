@@ -91,7 +91,6 @@ async function onDecrement(line: CartLine) {
   try {
     if (line.quantity <= 1) {
       await removeLineMutation.mutateAsync({
-        cartId: cid,
         productId: line.product_id,
         userId: uid,
       });
@@ -118,7 +117,6 @@ async function onRemove(line: CartLine) {
   setBusy(line.product_id);
   try {
     await removeLineMutation.mutateAsync({
-      cartId: cid,
       productId: line.product_id,
       userId: uid,
     });

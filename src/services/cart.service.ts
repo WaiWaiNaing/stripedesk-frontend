@@ -37,8 +37,11 @@ export const cartService = {
     return data;
   },
 
-  async removeCartLine(cartId: number, productId: number) {
-    const { data } = await api.delete<CartDetailResponse>(`/carts/${cartId}/items/${productId}`);
+  /** Backend: POST /users/:id/cart/items/remove with JSON { product_id }. */
+  async removeCartLine(userId: number, productId: number) {
+    const { data } = await api.post<CartDetailResponse>(`/users/${userId}/cart/items/remove`, {
+      product_id: productId,
+    });
     return data;
   },
 
