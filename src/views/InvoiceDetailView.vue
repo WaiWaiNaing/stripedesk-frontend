@@ -28,13 +28,11 @@ const order = computed<Record<string, unknown>>(() => {
   const p = payload.value ?? {};
   return (p.order as Record<string, unknown> | undefined) ?? {};
 });
-const firstLine = computed<Record<string, unknown>>(() => {
+const lineItems = computed<Record<string, unknown>[]>(() => {
   const p = payload.value ?? {};
   const lines = p.lines;
-  if (Array.isArray(lines) && lines.length > 0 && typeof lines[0] === "object" && lines[0] !== null) {
-    return lines[0] as Record<string, unknown>;
-  }
-  return {};
+  if (!Array.isArray(lines)) return [];
+  return lines.filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null);
 });
 
 const receiptStub = computed(() => {
@@ -60,7 +58,11 @@ const invoiceLabel = computed(
 );
 const statusText = computed(() => asText(invoice.value.status, asText(order.value.status, "unknown")));
 const issuedAtText = computed(() => asText(invoice.value.issued_at, asText(invoice.value.created_at)));
-const productText = computed(() => asText(firstLine.value.product_name, asText(invoice.value.product_name)));
+const lineCountLabel = computed(() => {
+  const n = lineItems.value.length;
+  if (n === 0) return "—";
+  return `${n} line${n === 1 ? "" : "s"}`;
+});
 
 const isPaid = computed(() => statusText.value.toLowerCase() === "paid");
 const canPay = computed(() => !!invoiceId.value && !payMutation.isPending.value && !isPaid.value);
@@ -160,8 +162,8 @@ function backToInvoices() {
               <p class="mt-1 text-sm font-medium text-slate-200">{{ issuedAtText }}</p>
             </div>
             <div>
-              <p class="text-xs uppercase tracking-[0.24em] text-slate-500">Product</p>
-              <p class="mt-1 text-sm font-medium text-slate-200">{{ productText }}</p>
+              <p class="text-xs uppercase tracking-[0.24em] text-slate-500">Line items</p>
+              <p class="mt-1 text-sm font-medium text-slate-200">{{ lineCountLabel }}</p>
             </div>
           </div>
         </article>
@@ -186,6 +188,27 @@ function backToInvoices() {
           </div>
         </article>
       </div>
+
+      <article
+        v-if="lineItems.length > 0"
+        class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+      >
+        <h2 class="text-lg font-semibold text-white">Products</h2>
+        <ul class="mt-4 divide-y divide-white/10">
+          <li
+            v-for="(line, idx) in lineItems"
+            :key="(line.id as number | string | undefined) ?? idx"
+            class="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0"
+          >
+            <div>
+              <p class="font-medium text-slate-100">{{ asText(line.product_name) }}</p>
+              <p class="mt-1 text-xs text-slate-500">
+                Qty {{ asText(line.quantity, "1") }} × {{ asText(line.unit_price) }}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </article>
     </template>
   </section>
 </template>
