@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import FormPinInput from "@/components/common/form-input/FormPinInput.vue";
 import AppButton from "@/components/ui/AppButton.vue";
 import { toast } from "@/lib/toast";
 import { useResendOtpMutation, useVerifyOtpMutation } from "@/query/auth.query";
-import { getApiErrorMessage } from "@/services/auth.service";
+import { authService, getApiErrorMessage } from "@/services/auth.service";
+import { useAuthStore } from "@/stores/auth";
 import type { AuthIntent, VerifyOtpResponse } from "@/type/auth.type";
 
 interface Props {
@@ -18,7 +19,9 @@ const props = withDefaults(defineProps<Props>(), {
   intent: "registration",
 });
 
+const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 const verifyOtpMutation = useVerifyOtpMutation();
 const resendOtpMutation = useResendOtpMutation();
 const form = reactive({ code: "" });
@@ -28,6 +31,14 @@ let resendTimer: ReturnType<typeof setInterval> | null = null;
 
 const isResendDisabled = computed(
   () => resendOtpMutation.isPending.value || resendCooldown.value > 0,
+);
+
+const destination = computed(() =>
+  typeof route.query.redirect === "string"
+    ? route.query.redirect
+    : auth.role === "admin"
+      ? "/admin"
+      : "/shop",
 );
 
 function stopResendTimer() {
@@ -96,10 +107,20 @@ async function handleSubmit() {
       return;
     }
 
-    await router.push({
-      path: "/",
-      query: { verified: "1" },
-    });
+    try {
+      const profileResponse = await authService.me();
+      auth.setSession({
+        id: profileResponse.data.id,
+        name: profileResponse.data.name,
+        email: profileResponse.data.email,
+        role: profileResponse.data.role,
+      });
+    } catch {
+      toast.error("Verified, but failed to load your profile.");
+      return;
+    }
+
+    await router.push(destination.value);
   } catch (error) {
     toast.error(getApiErrorMessage(error, "OTP verification failed. Please try again."));
   }
