@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { reconcileCheckoutSession } from "@/services/checkout.service";
 import { getApiErrorMessage } from "@/services/auth.service";
+import { receiptPdfUrl } from "@/services/receipt.service";
 import { toast } from "@/lib/toast";
 
 const route = useRoute();
@@ -15,6 +16,7 @@ const errorKey = ref<"none" | "missing_session" | "sign_in" | "reconcile">("none
 const paid = ref(false);
 const invoiceId = ref<number | null>(null);
 const orderId = ref<number | null>(null);
+const receiptId = ref<number | null>(null);
 
 const sessionId = computed(() => {
   const id = route.query.session_id;
@@ -53,6 +55,19 @@ onMounted(async () => {
     paid.value = true;
     orderId.value = data.order_id;
     invoiceId.value = data.invoice_id ?? null;
+    let rid: number | null =
+      typeof data.receipt_id === "number" && Number.isFinite(data.receipt_id) ? data.receipt_id : null;
+    if (rid == null && data.invoice && typeof data.invoice === "object") {
+      const inv = data.invoice as Record<string, unknown>;
+      const rec = inv.receipt as Record<string, unknown> | undefined;
+      const raw = rec?.id;
+      if (typeof raw === "number" && Number.isFinite(raw)) rid = raw;
+      else if (typeof raw === "string" && raw.trim() !== "") {
+        const p = Number(raw);
+        if (Number.isFinite(p)) rid = p;
+      }
+    }
+    receiptId.value = rid;
   } catch (e) {
     errorKey.value = "reconcile";
     toast.error(getApiErrorMessage(e, "Could not confirm your payment. Try again or check back shortly."));
@@ -154,6 +169,21 @@ onMounted(async () => {
           class="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
         >
           View invoice
+        </router-link>
+        <a
+          v-if="receiptId"
+          :href="receiptPdfUrl(receiptId)"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center rounded-full border border-emerald-400/35 bg-emerald-500/15 px-6 py-3 text-sm font-medium text-emerald-200 transition hover:border-emerald-300/45 hover:bg-emerald-500/25"
+        >
+          Download receipt PDF
+        </a>
+        <router-link
+          to="/receipts"
+          class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/10"
+        >
+          All receipts
         </router-link>
         <router-link
           to="/invoices"

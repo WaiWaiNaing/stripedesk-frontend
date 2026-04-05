@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { toast } from "@/lib/toast";
 import AppButton from "@/components/ui/AppButton.vue";
 import { useInvoiceDetailQuery, useInvoicePayMutation } from "@/query/invoice.query";
+import { receiptPdfUrl } from "@/services/receipt.service";
 
 const route = useRoute();
 const router = useRouter();
@@ -34,6 +35,16 @@ const firstLine = computed<Record<string, unknown>>(() => {
     return lines[0] as Record<string, unknown>;
   }
   return {};
+});
+
+const receiptStub = computed(() => {
+  const p = payload.value ?? {};
+  const r = p.receipt as Record<string, unknown> | undefined;
+  if (!r || typeof r !== "object") return null;
+  const id = r.id;
+  const n = typeof id === "number" ? id : typeof id === "string" ? Number(id) : NaN;
+  if (!Number.isFinite(n) || n < 1) return null;
+  return { id: n, receipt_number: asText(r.receipt_number, "") };
 });
 
 function asText(value: unknown, fallback = "—") {
@@ -158,10 +169,20 @@ function backToInvoices() {
         <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <p class="text-xs uppercase tracking-[0.24em] text-slate-500">Action</p>
           <p class="mt-2 text-sm text-slate-300">Complete payment securely for this invoice.</p>
-          <div class="mt-5">
+          <div class="mt-5 flex flex-col gap-3">
             <AppButton :disabled="!canPay" :loading="payMutation.isPending.value" @click="payInvoice">
               {{ isPaid ? "Already paid" : "Pay invoice" }}
             </AppButton>
+            <a
+              v-if="isPaid && receiptStub"
+              :href="receiptPdfUrl(receiptStub.id)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center justify-center rounded-full border border-indigo-400/40 bg-indigo-500/15 px-4 py-2.5 text-sm font-medium text-indigo-200 transition hover:border-indigo-300/50 hover:bg-indigo-500/25"
+            >
+              Download receipt PDF
+              <span v-if="receiptStub.receipt_number" class="ml-1 opacity-80">({{ receiptStub.receipt_number }})</span>
+            </a>
           </div>
         </article>
       </div>

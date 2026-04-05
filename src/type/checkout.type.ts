@@ -2,6 +2,7 @@ export interface CheckoutReconcilePaidPayload {
   state: "paid";
   order_id: number;
   invoice_id: number | null;
+  receipt_id?: number | null;
   invoice?: Record<string, unknown>;
 }
 
